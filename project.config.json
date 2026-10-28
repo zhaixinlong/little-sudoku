@@ -1,0 +1,9 @@
+{
+  "description": "小芽数独 · 儿童数独乐园",
+  "miniprogramRoot": "miniprogram/",
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "little-sudoku",
+  "setting": { "es6": true, "enhance": true, "minified": true, "postcss": true, "urlCheck": true },
+  "packOptions": { "ignore": [], "include": [] }
+}

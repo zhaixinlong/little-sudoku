@@ -1,0 +1,12 @@
+{
+  "name": "little-sudoku",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "儿童友好的原生微信数独小程序",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "preview": "node tools/preview.js"
+  }
+}

@@ -1,0 +1,76 @@
+<view class="app">
+  <view wx:if="{{view === 'home'}}" class="home page">
+    <view class="topline"><view class="brand"><text class="brand-mark">🌱</text><text>小芽数独</text></view><button class="text-button" bindtap="openSettings">家长设置 ⚙</button></view>
+    <view class="hero">
+      <view class="eyebrow">LITTLE SUDOKU CLUB</view>
+      <view class="hero-title">小小的格子，<text>{{'\n'}}</text>大大的发现。</view>
+      <view class="hero-sub">每天一点点，让思考慢慢发芽。</view>
+      <view class="hero-art"><view class="art-sun">☀</view><view class="art-grid"><text>🍎</text><text>🍋</text><text>🍇</text><text>?</text></view><text class="art-leaf">🌿</text><text class="art-spark">✦</text></view>
+      <view class="hero-footer"><text>不着急，想一想就很棒</text><text>✦</text></view>
+    </view>
+    <view wx:if="{{hasSession}}" class="resume-card"><view><view class="card-title">你的小探险还在这里</view><view class="muted">已自动保存，接着上次慢慢想</view></view><button class="small-primary" bindtap="resume">继续玩 →</button></view>
+    <button class="learn-banner" bindtap="openLearn"><view class="banner-icon">💡</view><view class="banner-copy"><view class="card-title">{{tutorialDone ? '再和小芽练习一下' : '第一次玩？跟着小芽学'}}</view><view class="muted">3 个小练习，学会行、列和小宫</view></view><text>↗</text></button>
+    <view class="section-heading"><view><view class="eyebrow">CHOOSE YOUR ADVENTURE</view><view class="section-title">今天，去哪里探索？</view></view><text class="tiny">按能力选择，不限年龄</text></view>
+    <view class="mode-list"><button wx:for="{{modes}}" wx:key="size" class="mode-card {{item.color}} {{size === item.size ? 'active' : ''}}" data-size="{{item.size}}" bindtap="chooseSize"><view class="mode-icon">{{item.icon}}</view><view class="mode-copy"><view class="mode-title">{{item.title}} <text class="mode-tag">{{item.size}} × {{item.size}}</text></view><view class="mode-desc">{{item.description}}</view><view class="mode-age">{{item.age}}</view></view><view class="radio">{{size === item.size ? '✓' : ''}}</view></button></view>
+    <view class="section-title small">选一个舒服的节奏</view>
+    <view class="difficulty-list"><button wx:for="{{difficulties}}" wx:key="id" class="difficulty {{difficulty === item.id ? 'active' : ''}}" data-id="{{item.id}}" bindtap="chooseDifficulty"><view>{{item.name}}</view><view class="tiny">{{item.detail}}</view></button></view>
+    <button class="primary start-button" bindtap="begin" loading="{{busy}}" disabled="{{busy}}">开始小探险 <text>→</text></button>
+    <view class="home-bottom"><button class="daily-card" bindtap="daily" disabled="{{busy}}"><text class="tile-icon">🌤</text><view class="card-title">每日小探险</view><view class="muted">{{dailyDone ? '今日已完成 · 可再练习' : '每天一道六宫 · 轻松思考'}}</view><text class="link">一起发现 →</text></button><button class="garden-card" bindtap="openGarden"><text class="tile-icon">🌷</text><view class="card-title">我的小花园</view><view class="muted">{{stats.stars}} 颗星星 · {{stats.total}} 次完成</view><text class="link">看看成长 →</text></button></view>
+    <view class="footer-note">没有广告 · 没有内购 · 离线也能玩</view>
+  </view>
+
+  <view wx:elif="{{view === 'game'}}" class="page game-page">
+    <view class="game-top"><button class="back-button" bindtap="goHome">‹ 首页</button><text class="game-top-label">{{gameTitle}}</text><button class="text-button" bindtap="openLearn">规则 ?</button></view>
+    <view class="game-heading"><view><view class="eyebrow">TAKE YOUR TIME</view><view class="section-title">慢慢想，你可以的。</view></view><view class="difficulty-pill">{{difficultyName}} · {{size}} × {{size}}</view></view>
+    <view class="game-meta"><text>还剩 <text class="emphasis">{{empty}}</text> 格小发现</text><text>已探索 {{elapsed}}</text></view>
+    <view class="progress-track"><view class="progress-fill" style="width: {{progress}}%"></view></view>
+    <view class="board board-{{size}}">
+      <view wx:for="{{cells}}" wx:key="index" data-index="{{item.index}}" bindtap="selectCell" style="width: {{100 / size}}%" class="cell {{item.related ? 'related' : ''}} {{item.same ? 'same' : ''}} {{item.fixed ? 'fixed' : 'editable'}} {{item.selected ? 'selected' : ''}} {{item.conflict ? 'conflict' : ''}} {{item.right ? 'box-right' : ''}} {{item.bottom ? 'box-bottom' : ''}}">
+        <text wx:if="{{item.value}}" class="cell-value {{settings.symbols === 'fruit' ? 'fruit' : ''}}">{{item.label}}</text>
+        <view wx:else class="notes"><text wx:for="{{item.notes}}" wx:for-item="note" wx:key="value">{{note.label}}</text></view>
+        <text wx:if="{{item.fixed}}" class="clue-dot">·</text>
+      </view>
+    </view>
+    <view class="board-legend"><text>● 小圆点是给出的线索</text><text>{{settings.symbols === 'fruit' ? '每种水果代表一个数字' : '粗线围成一个小宫'}}</text></view>
+    <view class="coach"><text class="coach-face">🌱</text><text>{{message}}</text></view>
+    <view wx:if="{{hint}}" class="hint-card"><view class="eyebrow">一起找线索</view><view class="card-title">{{hint.position}}，试试 {{hint.label}}</view><view class="hint-reason">{{hint.reason}}</view><view class="hint-actions"><button class="secondary" bindtap="cancelHint">我自己来</button><button class="primary" bindtap="applyHint">帮我填这一格</button></view><view class="tiny">使用提示后，本局最高获得 2 颗星星，仍然很棒。</view></view>
+    <view wx:if="{{!completed}}">
+      <view class="keypad {{size === 9 ? 'keypad-nine' : ''}}"><button wx:for="{{keys}}" wx:key="value" class="number-key {{item.used ? 'used' : ''}} {{noteMode ? 'pencil-key' : ''}}" data-value="{{item.value}}" bindtap="enter" disabled="{{!!hint}}"><text class="key-label">{{item.label}}</text><text wx:if="{{settings.symbols === 'fruit'}}" class="key-caption">{{item.value}}</text></button></view>
+      <view class="tools"><button bindtap="undo" disabled="{{!!hint}}"><text class="tool-icon">↶</text><text>撤回</text></button><button bindtap="erase" disabled="{{!!hint}}"><text class="tool-icon">⌫</text><text>擦除</text></button><button class="{{noteMode ? 'tool-active' : ''}}" bindtap="toggleNote" disabled="{{!!hint}}"><text class="tool-icon">✎</text><text>{{noteMode ? '笔记中' : '笔记'}}</text></button><button bindtap="check" disabled="{{!!hint}}"><text class="tool-icon">✓</text><text>检查</text></button><button bindtap="hint" disabled="{{!!hint}}"><text class="tool-icon">☀</text><text>提示</text></button></view>
+      <view class="game-tip">{{noteMode ? '笔记模式：记下可能的答案，再点「笔记」恢复填写。' : '没有倒计时，也不用怕出错。一次只想一小步。'}}</view>
+    </view>
+    <view wx:if="{{completed}}" class="success-card"><view class="success-flower">🌻</view><view class="section-title">又长大了一点点！</view><view class="stars">{{earned === 3 ? '★ ★ ★' : earned === 2 ? '★ ★ ☆' : earned === 1 ? '★ ☆ ☆' : '✦'}}</view><view class="muted">{{earned ? '收获 ' + earned + ' 颗星星，送进你的花园' : '今天的挑战已收获奖励，这次练习也很棒'}}</view><view class="completion-meta">{{elapsed}} 的认真探索 · 使用 {{hints}} 次提示</view><button class="primary" bindtap="nextGame" disabled="{{busy}}" loading="{{busy}}">{{gameTitle === '每日小探险' ? '再玩一道六宫' : '再种下一道新题'}} →</button><button class="text-button" bindtap="openGarden">去花园看看</button></view>
+    <view wx:if="{{storageWarning}}" class="warning">设备存储空间不足，本次进度可能无法保存。</view>
+  </view>
+
+  <view wx:elif="{{view === 'learn'}}" class="page learn-page">
+    <view class="topline"><button class="back-button" bindtap="goHome">‹ 首页</button><text class="eyebrow">小芽的数独课堂</text><text>🌱</text></view>
+    <view class="section-title lesson-title">三个小秘密，就会玩。</view><view class="intro-copy">数独是找规律的游戏，不需要加减法。<text>{{'\n'}}</text>水果和数字的玩法一样：把缺少的朋友找回来。</view>
+    <view class="rule-list"><view><text class="rule-number">1</text><view><text class="card-title">每一行，不重复</text><text class="muted block">横着看，每个数字或水果都出现一次。</text></view></view><view><text class="rule-number">2</text><view><text class="card-title">每一列，不重复</text><text class="muted block">竖着看，每个数字或水果都出现一次。</text></view></view><view><text class="rule-number">3</text><view><text class="card-title">每个小宫，不重复</text><text class="muted block">粗线围住的区域，也要放齐全部朋友。</text></view></view></view>
+    <view class="lesson-panel"><view class="lesson-steps"><text wx:for="{{[1,2,3]}}" wx:key="*this" class="{{lessonIndex + 1 === item ? 'current' : ''}}">{{item}}</text></view><view class="section-title small">{{lesson.title}}</view><view class="intro-copy">{{lesson.text}}</view><view class="board lesson-board board-4"><view wx:for="{{lessonCells}}" wx:key="index" class="cell {{item.highlight ? 'related' : ''}} {{item.target ? 'selected' : 'fixed'}} {{item.right ? 'box-right' : ''}} {{item.bottom ? 'box-bottom' : ''}}" style="width:25%"><text class="cell-value">{{item.label}}</text></view></view><view class="lesson-keypad"><button wx:for="{{lessonKeys}}" wx:key="value" data-value="{{item.value}}" bindtap="lessonAnswer" disabled="{{lessonDone}}">{{item.label}}</button></view><view class="lesson-message">{{lessonMessage}}</view><button class="primary" bindtap="nextLesson" disabled="{{!lessonDone}}">{{lessonIndex === 2 ? '学会啦，去探索 →' : '下一个小秘密 →'}}</button></view>
+    <view class="info-card"><view class="card-title">四宫、六宫、九宫，有什么不同？</view><view class="body-copy">四宫：1—4，小宫是 2 行 × 2 列。<text>{{'\n'}}</text>六宫：1—6，小宫是 2 行 × 3 列。<text>{{'\n'}}</text>九宫：1—9，小宫是 3 行 × 3 列。<text>{{'\n'}}</text>大格子里数字更多，三个小秘密一直都一样。</view></view>
+    <view class="info-card"><view class="card-title">小工具，陪你慢慢想</view><view class="body-copy">点空格，再点答案；给出的线索不能修改。<text>{{'\n'}}</text>✎ 笔记：记下可能的答案，不算正式填写。<text>{{'\n'}}</text>↶ 撤回：返回上一步；⌫ 擦除：清空所选格。<text>{{'\n'}}</text>✓ 检查：找出要再想想的地方。<text>{{'\n'}}</text>☀ 提示：一起观察规律，也可以帮填一格。</view></view>
+    <view class="info-card"><view class="card-title">每一份努力都有星星</view><view class="body-copy">完成一局收获 3 颗星星；用过帮填提示减 1 颗，检查发现过错误再减 1 颗，至少收获 1 颗。撤回不恢复已使用的提示记录。每日挑战一天只奖励一次，重复练习不重复领奖。</view></view>
+    <view class="footer-note">给家长：先鼓励孩子观察和表达，再一起尝试答案。</view>
+  </view>
+
+  <view wx:elif="{{view === 'garden'}}" class="page">
+    <view class="topline"><button class="back-button" bindtap="goHome">‹ 首页</button><text class="eyebrow">MY LITTLE GARDEN</text><text>🌷</text></view>
+    <view class="garden-hero"><view class="garden-big">🌱 🌷 🌻</view><view class="section-title">认真思考，会开花。</view><view class="intro-copy">每一颗星星，都是一次小小的成长。</view></view>
+    <view class="stats-row"><view><text class="stat-number">{{stats.stars}}</text><text>收获星星</text></view><view><text class="stat-number">{{stats.total}}</text><text>完成探险</text></view><view><text class="stat-number">{{streak}}</text><text>连续探索天数</text></view></view>
+    <view class="section-title small">我的成长图鉴</view><view class="plant-grid"><view wx:for="{{plants}}" wx:key="need" class="plant-card {{item.unlocked ? '' : 'locked'}}"><text class="plant-icon">{{item.unlocked ? item.icon : '🌰'}}</text><view class="card-title">{{item.name}}</view><view class="muted">{{item.unlocked ? '已经在你的花园里' : item.need + ' 颗累计星星解锁'}}</view></view></view>
+    <view class="coach"><text>🌱</text><text>{{nextPlant ? '下一份惊喜在 ' + nextPlant + ' 颗星星等你。不着急，享受每次发现。' : '花园已经盛开，新题目和新发现一直都在。'}}</text></view>
+    <view class="info-card"><view class="card-title">我的探索足迹</view><view class="journey-row" wx:for="{{modes}}" wx:key="size"><text>{{item.icon}} {{item.title}}</text><text>{{stats.bySize[item.size] || 0}} 次完成</text></view></view>
+    <button class="primary" bindtap="goHome">去发现新的规律 →</button>
+  </view>
+
+  <view wx:elif="{{view === 'settings'}}" class="page">
+    <view class="topline"><button class="back-button" bindtap="goHome">‹ 首页</button><text class="eyebrow">给陪伴孩子的你</text><text>☀</text></view>
+    <view class="section-title lesson-title">让探索更适合孩子。</view><view class="intro-copy">以孩子的理解和兴趣为准，不比较速度。</view>
+    <view class="settings-card"><view class="card-title">格子里的小伙伴</view><view class="intro-copy">水果适合初次接触，数字适合进阶练习。</view><view class="symbol-options"><button class="{{settings.symbols === 'fruit' ? 'active' : ''}}" data-value="fruit" bindtap="setSymbols">🍎 水果图案</button><button class="{{settings.symbols === 'number' ? 'active' : ''}}" data-value="number" bindtap="setSymbols">1 2 3 数字</button></view></view>
+    <view class="settings-card"><view class="setting-row"><view><view class="card-title">温柔提醒</view><view class="muted">输入重复数字时，用颜色提示</view></view><switch color="#43745e" checked="{{settings.assist}}" data-key="assist" bindchange="toggleSetting"/></view><view class="setting-row"><view><view class="card-title">轻触反馈</view><view class="muted">填写时轻轻振动，默认关闭</view></view><switch color="#43745e" checked="{{settings.vibration}}" data-key="vibration" bindchange="toggleSetting"/></view></view>
+    <view class="info-card"><view class="card-title">给家长的小建议</view><view class="body-copy">• 刚开始可以一起玩四宫，先说出“缺少谁”。<text>{{'\n'}}</text>• 建议每次玩 10—15 分钟，休息一下眼睛。<text>{{'\n'}}</text>• 提示是学习的一部分，星星不代表孩子的能力。<text>{{'\n'}}</text>• 六宫、九宫与三个难度随时开放，自由选择。</view></view>
+    <view class="info-card"><view class="card-title">关于小芽数独 · 1.0</view><view class="body-copy">无需注册，无广告、无内购。题目在设备上生成，每题验证唯一解。轻松模式可通过逐步排除完成；不同难度主要区别是线索数量。<text>{{'\n'}}</text><text>{{'\n'}}</text>设置、存档和成长记录仅保存在当前设备，不采集身份或位置，不上传游戏数据。清理微信缓存、换机或卸载可能丢失记录。每日挑战按设备本地日期更新。</view></view>
+    <button class="danger-button" bindtap="resetProgress">清除本机全部记录</button><view class="footer-note">仅供家长操作 · 删除后无法恢复</view>
+  </view>
+</view>
